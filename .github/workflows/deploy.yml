@@ -114,7 +114,7 @@ jobs:
           echo "Checking SSH connection to ${{ secrets.SSH_HOST }}..."
           timeout 10s nc -z ${{ secrets.SSH_HOST }} 22 || (echo "Cannot connect to the server on port 22" && exit 1)
 
-      - name: SSH and Deploy Containers
+      - name: Deploy CleonoraRest Container
         uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -122,7 +122,7 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
           timeout: 60s
-          command_timeout: 30m
+          command_timeout: 15m
           script_stop: true
           script: |
             set -e
@@ -157,7 +157,23 @@ jobs:
               -e SPRING_DATASOURCE_PASSWORD=0000 \
               -p 7939:8082 ${{ secrets.DOCKER_USERNAME }}/cleonora-rest-miahkykh:latest
             echo "CleonoraRest container has been updated"
+      
+      - name: Wait for 1 minute between deployments
+        run: |
+          echo "Waiting for 1 minute before deploying Admin component..."
+          sleep 60
             
+      - name: Deploy CleonoraAdmin Container
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          timeout: 60s
+          command_timeout: 15m
+          script_stop: true
+          script: |
             # Update and restart CleonoraAdmin container
             echo "Restarting CleonoraAdmin container"
             docker stop cleonora-admin || true
