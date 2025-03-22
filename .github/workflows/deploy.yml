@@ -88,15 +88,32 @@ jobs:
 
   deploy-to-server:
     name: Deploy to Server
-    needs: [build-and-deploy-rest, build-and-deploy-admin]
+    needs: [ build-and-deploy-rest, build-and-deploy-admin ]
     runs-on: ubuntu-latest
     
     steps:
+      - name: SSH Restart PostgreSQL container
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            docker network ls | grep -q "cleonora-network" || docker network create cleonora-network
+            echo "Restarting PostgreSQL container"
+            
+            docker stop cleonora-db || echo "PostgreSQL container not running"
+            docker rm cleonora-db || echo "PostgreSQL container not found"
+            docker pull postgres:latest
+            docker run -d --name cleonora-db --net cleonora-network -e POSTGRES_PASSWORD=0000 -e POSTGRES_DB=postgres -p 5440:5432 postgres:latest
+            echo "PostgreSQL container has been updated"
+
       - name: Check SSH connection
         run: |
           echo "Checking SSH connection to ${{ secrets.SSH_HOST }}..."
           timeout 10s nc -z ${{ secrets.SSH_HOST }} 22 || (echo "Cannot connect to the server on port 22" && exit 1)
-      
+
       - name: SSH and Deploy Containers
         uses: appleboy/ssh-action@v1.2.1
         with:
