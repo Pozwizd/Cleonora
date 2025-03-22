@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="template/layout.html">
+
+<body>
+    <div layout:fragment="content">
+
+        <h4 class="fw-bold py-3 mb-4">Пользователи</h4>
+
+        <div class="card" id="card-block">
+            <div class="card-header py-2">
+                <div class="row w-100 align-items-center justify-content-end">
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <label class="d-flex align-items-center gap-2 w-100">
+                            Поиск:
+                            <input type="text" id="search" class="form-control" placeholder="Поиск...">
+                        </label>
+                    </div>
+
+                    <div class="col-lg-1 col-md-2 col-sm-2">
+                        <button class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" id="createEntity" data-bs-target="#entityModal">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="card-body">
+                <div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr id="table-head">
+                                    <th class="text-center">ID</th>
+                                    <th class="text-center">Имя Фамилия</th>
+                                    <th class="text-center">Почта</th>
+                                    <th class="text-center">Права</th>
+                                    <th class="text-center">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer d-flex justify-content-between align-items-center pb-0">
+                <label class="d-flex align-items-center gap-1" style="transform: translateY(-8px);">
+                    Показать:
+                    <select id="pageSize" class="form-control">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                    </select>
+                </label>
+                <nav aria-label="Навигация по страницам">
+                    <ul class="pagination" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Индикатор загрузки -->
+            <div id="loading-indicator" class="d-none justify-content-center align-items-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+            </div>
+
+            <!-- Модальное окно для создания/редактирования пользователя -->
+            <div class="modal fade" id="editAdminUser" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-simple modal-edit-admin-user">
+                    <div class="modal-content p-3 p-md-5">
+                        <div class="modal-body">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Закрыть"></button>
+                            <div class="text-center mb-4">
+                                <h3 class="modal-title mb-2">Создать Пользователя</h3>
+                                <p class="text-muted">Добавление нового пользователя администратора.</p>
+                            </div>
+                            <form id="editAdminUserForm" class="row g-3" onsubmit="return false">
+                                <input type="hidden" id="adminUserId" name="id">
+                                <!-- Имя -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="adminUserName">Имя</label>
+                                    <input type="text" id="adminUserName" name="name" class="form-control"
+                                        placeholder="Иван" />
+                                </div>
+
+                                <!-- Фамилия -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="adminUserSurname">Фамилия</label>
+                                    <input type="text" id="adminUserSurname" name="surname" class="form-control"
+                                        placeholder="Иванов" />
+                                </div>
+
+                                <!-- Электронная почта -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="adminUserEmail">Электронная почта</label>
+                                    <input type="email" id="adminUserEmail" name="email" class="form-control"
+                                        placeholder="example@domain.com" />
+                                </div>
+
+                                <!-- Номер телефона -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="adminUserPhone">Номер телефона</label>
+                                    <input type="text" id="adminUserPhone" name="phoneNumber" class="form-control"
+                                        placeholder="+380" />
+                                </div>
+
+                                <!-- Пароль -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="adminUserPassword">Пароль</label>
+                                    <input type="password" id="adminUserPassword" name="password" class="form-control"
+                                        placeholder="••••••••" />
+                                </div>
+
+                                <!-- Роль -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="adminUserRole">Роль</label>
+                                    <select id="adminUserRole" name="role" class="form-select">
+                                        <option value="" disabled selected>Загрузка ролей...</option>
+                                    </select>
+                                </div>
+
+                                <!-- Активен -->
+                                <div class="col-12">
+                                    <label class="switch">
+                                        <input type="checkbox" id="adminUserIsActive" name="isActive"
+                                            class="switch-input" checked />
+                                        <span class="switch-toggle-slider">
+                                            <span class="switch-on"></span>
+                                            <span class="switch-off"></span>
+                                        </span>
+                                        <span class="switch-label">Активен</span>
+                                    </label>
+                                </div>
+
+                                <!-- Кнопки отправки и отмены -->
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary me-sm-3 me-1">Сохранить</button>
+                                    <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal"
+                                        aria-label="Закрыть">
+                                        Отменить
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модальное окно подтверждения удаления -->
+            <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteConfirmModalLabel">Подтверждение удаления</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Закрыть"></button>
+                        </div>
+                        <div class="modal-body">
+                            Вы уверены, что хотите удалить этого пользователя?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-label-secondary"
+                                data-bs-dismiss="modal">Отменить</button>
+                            <button type="button" class="btn btn-danger" id="confirm-delete-btn">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const app = new GenericCRUDApp({
+                    api: {
+                        baseURL: '[[@{/}]]'.replaceAll("\"", ""),
+                        endpoints: {
+                            getAll: 'admin/getAllManagerUsers',
+                            getById: 'admin/{id}',
+                            create: 'admin/create',
+                            update: 'admin/{id}',
+                            delete: 'admin/{id}'
+                        },
+                        entityType: 'json' // Указываем тип сущности по умолчанию как 'json'
+                    },
+                    entityName: 'Пользователь',
+                    tableBodyId: 'table-body',
+                    paginationId: 'pagination',
+                    modalId: 'editAdminUser',
+                    formId: 'editAdminUserForm',
+                    deleteModalId: 'deleteConfirmModal',
+                    confirmDeleteBtnId: 'confirm-delete-btn',
+                    searchInputId: 'search',
+                    pageSizeSelectId: 'pageSize',
+                    createButtonId: 'createEntity',
+                    loadingIndicatorId: 'loading-indicator',
+                    columns: [
+                        { key: 'id', title: 'ID' },
+                        {
+                            title: 'Имя Фамилия',
+                            render: (item) => `${item.name || ''} ${item.surname || ''}`.trim()
+                        },
+                        { key: 'email', title: 'Почта' },
+                        { key: 'role', title: 'Права' }
+                    ],
+                    formFields: [
+                        { name: 'id', type: 'hidden' },
+                        { name: 'name', type: 'text', label: 'Имя', required: true },
+                        { name: 'surname', type: 'text', label: 'Фамилия', required: true },
+                        { name: 'email', type: 'email', label: 'Email', required: true },
+                        { name: 'phoneNumber', type: 'text', label: 'Телефон', required: true },
+                        { name: 'password', type: 'password', label: 'Пароль', required: false },
+                        { name: 'role', type: 'select', label: 'Роль', required: true },
+                        { name: 'isActive', type: 'checkbox', label: 'Активен' }
+                    ],
+                    toastConfig: {
+                        positionClass: 'toast-top-right',
+                        timeOut: 10000,
+                        progressBar: true,
+                        closeButton: false
+                    },
+                    notificationKeyword: 'message'
+                });
+
+                const roleSelect = document.getElementById('adminUserRole');
+                fetch('[[@{/admin/roles}]]')
+                    .then(response => response.json())
+                    .then(roles => {
+                        roleSelect.innerHTML = '<option value="" disabled selected>Выберите роль</option>';
+                        roles.forEach(role => {
+                            const option = document.createElement('option');
+                            option.value = role;
+                            option.textContent = getRoleDisplayName(role);
+                            roleSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при загрузке ролей:', error);
+                        app.showToast('error', 'Ошибка', 'Ошибка при загрузке ролей');
+                    });
+
+                function getRoleDisplayName(role) {
+                    const roleNames = {
+                        ADMIN: 'Администратор',
+                        MANAGER: 'Менеджер'
+                    };
+                    return roleNames[role] || role;
+                }
+
+                const phoneInput = document.getElementById('adminUserPhone');
+                if (phoneInput && typeof Inputmask !== 'undefined') {
+                    Inputmask("999 999 9999").mask(phoneInput);
+                }
+            });
+        </script>
+
+        <script th:src="@{/customAssets/js/formCrudScript.js}"></script>
+
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="template/layout.html" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.ultraq.net.nz/thymeleaf/layout ">
+<body>
+<div layout:fragment="content">
+
+    <h4 class="fw-bold py-3 mb-4">Профиль</h4>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-start align-items-sm-center gap-4">
+                        <img
+                                th:src="@{/assets/img/avatars/14.png}"
+                                alt="user-avatar"
+                                class="d-block w-px-100 h-px-100 rounded"
+                                id="uploadedAvatar"
+                                th:onerror="'this.src=\'' + @{/assets/img/avatars/14.png} + '\''"
+                        />
+                        <div class="button-wrapper">
+                            <label for="upload" class="btn btn-primary me-2 mb-3" tabindex="0">
+                                <span class="d-none d-sm-block">Upload new photo</span>
+                                <i class="ti ti-upload d-block d-sm-none"></i>
+                                <input
+                                        type="file"
+                                        id="upload"
+                                        class="account-file-input"
+                                        hidden
+                                        accept="image/png, image/jpeg"
+                                />
+                            </label>
+                            <button type="button" class="btn btn-label-secondary account-image-reset mb-3">
+                                <i class="ti ti-refresh-dot d-block d-sm-none"></i>
+                                <span class="d-none d-sm-block">Reset</span>
+                            </button>
+                            <div class="text-muted">Allowed JPG, GIF or PNG. Max size of 800K</div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    // Update/reset user image of account page
+                    let accountUserImage = document.getElementById('uploadedAvatar');
+                    const fileInput = document.querySelector('.account-file-input'),
+                        resetFileInput = document.querySelector('.account-image-reset');
+
+                    if (accountUserImage) {
+                        const resetImage = accountUserImage.src;
+                        fileInput.onchange = () => {
+                            if (fileInput.files[0]) {
+                                accountUserImage.src = window.URL.createObjectURL(fileInput.files[0]);
+                            }
+                        };
+                        resetFileInput.onclick = () => {
+                            fileInput.value = '';
+                            accountUserImage.src = resetImage;
+                        };
+                    }
+                </script>
+                <hr class="my-0" />
+                <!-- /Account -->
+                <div class="card-body">
+                    <form id="formAdminUserProfile" method="POST" onsubmit="return false">
+                        <input type="hidden" id="userId" name="userId" />
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label for="name" class="form-label">Имя</label>
+                                <input
+                                        class="form-control"
+                                        type="text"
+                                        id="name"
+                                        name="name"
+                                        required
+                                />
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="surname" class="form-label">Фамилия</label>
+                                <input
+                                        class="form-control"
+                                        type="text"
+                                        id="surname"
+                                        name="surname"
+                                />
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input
+                                        class="form-control"
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        required
+                                        pattern="^(.+)@(.+)$"
+                                        placeholder="example@example.com"
+                                />
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="phoneNumber" class="form-label">Номер телефона</label>
+                                <input
+                                        type="text"
+                                        class="form-control"
+                                        id="phoneNumber"
+                                        name="phoneNumber"
+                                        placeholder="202 555 0111"
+                                />
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="password" class="form-label">Пароль</label>
+                                <input
+                                        type="password"
+                                        class="form-control"
+                                        id="password"
+                                        name="password"
+                                        placeholder="••••••••"
+                                />
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="isActive" class="form-label">Активный</label>
+                                <select id="isActive" name="isActive" class="form-select">
+                                    <option value="true">Да</option>
+                                    <option value="false">Нет</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="role" class="form-label">Роль</label>
+                                <select id="role" name="role" class="form-select">
+                                    <option value="ADMIN">Администратор</option>
+                                    <option value="SUPER_ADMIN">Супер Администратор</option>
+                                    <option value="MODERATOR">Модератор</option>
+                                    <option value="MANAGER">Менеджер</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <button type="submit" class="btn btn-primary me-2">Сохранить изменения</button>
+                            <button type="reset" class="btn btn-label-secondary">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+
+                <script th:inline="javascript">
+                    const contextPath = '[[@{/}]]'.replaceAll("\"", "");
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const roleSelect = document.getElementById('role');
+
+                        async function getRoles() {
+                            try {
+                                const response = await fetch(contextPath + 'admin/roles');
+                                if (!response.ok) throw new Error('Ошибка загрузки ролей');
+                                console.log(response);
+                                const roles = await response.json();
+                                roleSelect.innerHTML = '<option value="" disabled selected>Выберите роль</option>';
+
+                                roles.forEach(role => {
+                                    const option = document.createElement('option');
+                                    option.value = role;
+                                    option.textContent = role;
+                                    roleSelect.appendChild(option);
+                                });
+                            } catch (error) {
+                                alert('Ошибка загрузки ролей: ' + error.message);
+                            }
+                        }
+                        getRoles();
+
+                        const form = document.getElementById('formAdminUserProfile');
+                        const avatarImage = document.getElementById('uploadedAvatar');
+
+                        async function loadUserProfile() {
+                            try {
+                                const response = await fetch('getProfile');
+                                if (!response.ok) throw new Error('Ошибка загрузки профиля');
+                                const userProfile = await response.json();
+
+                                form.querySelector('#userId').value = userProfile.id;
+                                form.querySelector('#name').value = userProfile.name;
+                                form.querySelector('#surname').value = userProfile.surname;
+                                form.querySelector('#email').value = userProfile.email;
+                                form.querySelector('#phoneNumber').value = userProfile.phoneNumber;
+                                form.querySelector('#isActive').value = userProfile.isActive ? 'true' : 'false';
+                                form.querySelector('#role').value = userProfile.role;
+
+                                if (userProfile.avatar) {
+                                    avatarImage.src = contextPath + userProfile.avatar;
+                                } else {
+                                    avatarImage.src = '../../assets/img/avatars/default.png';
+                                }
+                            } catch (error) {
+                                console.log(error);
+                                alert('Ошибка загрузки профиля: ' + error.message);
+                            }
+                        }
+
+                        loadUserProfile();
+
+                        form.addEventListener('submit', async (event) => {
+                            event.preventDefault();
+
+                            // Удаляем старые сообщения об ошибках
+                            const errorMessages = document.querySelectorAll('.error-message');
+                            errorMessages.forEach(el => el.remove());
+                            const errorFields = document.querySelectorAll('.is-invalid');
+                            errorFields.forEach(el => el.classList.remove('is-invalid'));
+
+                            const formData = new FormData();
+
+                            const adminUserRequest = {
+                                id: form.querySelector('#userId').value,
+                                name: form.querySelector('#name').value.trim(),
+                                surname: form.querySelector('#surname').value.trim(),
+                                email: form.querySelector('#email').value.trim(),
+                                phoneNumber: form.querySelector('#phoneNumber').value.trim(),
+                                password: form.querySelector('#password').value.trim(),
+                                isActive: form.querySelector('#isActive').value === 'true',
+                                role: form.querySelector('#role').value
+                            };
+
+                            formData.append('adminUserRequest', new Blob([JSON.stringify(adminUserRequest)], { type: 'application/json' }));
+
+                            const avatarFile = fileInput.files[0];
+                            if (avatarFile) {
+                                formData.append('avatar', avatarFile);
+                            }
+
+                            try {
+                                const response = await fetch('saveProfile', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+
+                                if (!response.ok) {
+                                    if (response.status === 400) {
+                                        showToast('error', 'Ошибка', 'Некорректные данные для сохранения профиля');
+                                        const errorData = await response.json();  
+                                        console.log('Ошибки валидации:', errorData);
+                                        displayValidationErrors(errorData);
+                                    } else {
+                                        showToast('error', 'Ошибка', 'Произошла ошибка при сохранении профиля');
+                                        throw new Error('Ошибка сохранения профиля');
+                                    }
+                                } else {
+                                    showToast('success', 'Успех', 'Данные успешно сохранены!');
+                                    console.log('Данные успешно сохранены!');
+                                }
+                            } catch (error) {
+                                console.error('Ошибка:', error.message);
+                            }
+                        });
+
+                        function displayValidationErrors(errors) {
+                            for (const field in errors) {
+                                if (errors.hasOwnProperty(field)) {
+                                    const errorMessage = errors[field];
+                                    const inputField = form.querySelector(`[name="${field}"]`);
+                                    if (inputField) {
+                                        const errorSpan = document.createElement('span');
+                                        errorSpan.className = 'text-danger error-message';
+                                        errorSpan.textContent = errorMessage;
+                                        inputField.classList.add('is-invalid');
+                                        inputField.parentElement.appendChild(errorSpan);
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                </script>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script th:src="@{/customAssets/js/toast.js}"></script>
+
+</div>
+
+
+</body>
+
+
+</html>

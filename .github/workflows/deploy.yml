@@ -1,0 +1,145 @@
+name: Deploy Cleonora Projects
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy-rest:
+    name: Build and Deploy CleonoraRest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CleanoraRest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+
+      - name: Build app with Gradle
+        run: ./gradlew build -x test
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push CleonoraRest image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./CleanoraRest
+          file: ./CleanoraRest/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/cleonora-rest-miahkykh:latest
+
+  build-and-deploy-admin:
+    name: Build and Deploy CleonoraAdmin
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CleonoraAdmin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+
+      - name: Build app with Gradle
+        run: ./gradlew build -x test
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push CleonoraAdmin image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./CleonoraAdmin
+          file: ./CleonoraAdmin/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/cleonora-miahkykh:latest
+
+  deploy-to-server:
+    name: Deploy to Server
+    needs: [build-and-deploy-rest, build-and-deploy-admin]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: SSH and Deploy Containers
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            set -e
+            # Create network if it doesn't exist
+            docker network ls | grep -q "cleonora-network" || docker network create cleonora-network
+            
+            # Ensure PostgreSQL is running
+            if ! docker ps | grep -q "cleonora-db"; then
+              echo "Setting up PostgreSQL container"
+              docker stop cleonora-db || true
+              docker rm cleonora-db || true
+              docker pull postgres:latest
+              docker run -d --name cleonora-db --net cleonora-network \
+                -v cleonora-db-data:/var/lib/postgresql/data \
+                -e POSTGRES_PASSWORD=0000 \
+                -e POSTGRES_DB=postgres \
+                -p 5440:5432 postgres:latest
+              echo "PostgreSQL container has been set up"
+            fi
+            
+            # Update and restart CleonoraRest container
+            echo "Restarting CleonoraRest container"
+            docker stop cleonora-rest || true
+            docker rm cleonora-rest || true
+            docker pull ${{ secrets.DOCKER_USERNAME }}/cleonora-rest-miahkykh:latest
+            docker run -d --name cleonora-rest --network cleonora-network \
+              -e SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }} \
+              -e SPRING_DATASOURCE_URL=jdbc:postgresql://cleonora-db:5432/postgres \
+              -e SPRING_DATASOURCE_USERNAME=postgres \
+              -e SPRING_DATASOURCE_PASSWORD=0000 \
+              -p 7939:8082 ${{ secrets.DOCKER_USERNAME }}/cleonora-rest-miahkykh:latest
+            echo "CleonoraRest container has been updated"
+            
+            # Update and restart CleonoraAdmin container
+            echo "Restarting CleonoraAdmin container"
+            docker stop cleonora-admin || true
+            docker rm cleonora-admin || true
+            docker pull ${{ secrets.DOCKER_USERNAME }}/cleonora-miahkykh:latest
+            docker run -d --name cleonora-admin --network cleonora-network \
+              -e SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }} \
+              -e SPRING_DATASOURCE_URL=jdbc:postgresql://cleonora-db:5432/postgres \
+              -e SPRING_DATASOURCE_USERNAME=postgres \
+              -e SPRING_DATASOURCE_PASSWORD=0000 \
+              -p 7940:8081 ${{ secrets.DOCKER_USERNAME }}/cleonora-miahkykh:latest
+            echo "CleonoraAdmin container has been updated" 

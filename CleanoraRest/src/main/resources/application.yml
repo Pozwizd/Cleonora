@@ -1,0 +1,122 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /cleonora/v1/
+
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    path: /
+    tagsSorter: alpha
+    operations-sorter: alpha
+
+
+spring:
+  application:
+    name: Cleonora
+
+
+
+  cache:
+    type: caffeine
+    cache-names: categories, category
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+
+
+
+
+
+  datasource:
+    url: jdbc:postgresql://slj.demodev.cc:5440/postgres
+    username: postgres
+    password: "0000"
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: public
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create-drop
+
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 2KB
+      max-file-size: 200MB
+      max-request-size: 215MB
+
+logging:
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"
+  level:
+    file: INFO
+  file:
+    name: "/home/slj/projects/Cleonora-R.Miahkykh/logs/CleonoraDocker.log"
+
+upload:
+  folder:
+    path: "/home/slj/projects/Cleonora-R.Miahkykh/uploads"
+
+
+secret-key: ${SENDGRID_API_KEY}
+sender: "dima.ivanov@avada-media.com"
+
+geoapify:
+  api:
+    key: "72af698fdf074aedb40a114de2b12b0b"
+
+
+jwt:
+  secret:
+    key: zX1P4jRW7kF2yG9LhZ6V3mN8qX4aQ5bC0rT3nU7vW1yX8fL2mB5dH9eJ6sP0tA1X
+  token:
+    access:
+      expiration: 86400000
+    refresh:
+      expiration: 604800000
+
+
+work-schedule:
+  schedule:
+    monday:
+      start: "08:00"
+      end: "18:00"
+      lunch:
+        start: "12:00"
+        end: "13:00"
+    tuesday:
+      start: "08:00"
+      end: "18:00"
+      lunch:
+        start: "12:00"
+        end: "13:00"
+    wednesday:
+      start: "08:00"
+      end: "18:00"
+      lunch:
+        start: "12:00"
+        end: "13:00"
+    thursday:
+      start: "08:00"
+      end: "18:00"
+      lunch:
+        start: "12:00"
+        end: "13:00"
+    friday:
+      start: "08:00"
+      end: "18:00"
+      lunch:
+        start: "12:00"
+        end: "13:00"
+    saturday:
+      start: "10:00"
+      end: "14:00"
+      lunch:
+        start: "12:00"
+        end: "12:30"
+    sunday:
+      start: "off"
