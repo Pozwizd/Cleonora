@@ -90,17 +90,9 @@ RESTful API документирован с использованием Swagger
 
 ## Разработка
 
-Проект разработан в соответствии с дизайном из Figma:
-- Дизайн: https://www.figma.com/file/dqJH0MMeO9Tvkjy8zRvghx/Cleanora-App-(SL)
 - Математическая модель (Excel)
 - Схема базы данных (draw.io)
 - UML диаграмма классов
 - Перечень задач с оценкой времени в сводной таблице и Teamwork
 
-## Лицензия
 
-Proprietary software, all rights reserved.
-
----
-
-© 2023 Cleanora. Все права защищены.
